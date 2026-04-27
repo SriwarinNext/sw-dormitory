@@ -1001,10 +1001,17 @@
             
             try {
                 await db.collection(getColPath("checkinHistory")).doc(historyId).set({ id: historyId, studentId: currentUser.data.id, type: 'in', timestamp: new Date().toISOString(), photoUrl: "" });
-                await db.collection(getColPath("students")).doc(currentUser.data.id).update({ status: 'in' });
+                await db.collection(getColPath("students")).doc(currentUser.data.id).set({ status: 'in' }, { merge: true });
                 
-                // ส่งรูปไปเก็บใน Drive ผ่าน Apps Script
-                const gasResult = await apiCall('checkIn', { studentId: currentUser.data.id, photoData: photoDataUrl });
+                // อัปเดตสถานะในตัวแปรทันที เพื่อแสดงผลใน UI ไม่ต้องรอโหลด
+                currentUser.data.status = 'in';
+
+                // ส่งรูปไปเก็บใน Drive ผ่าน Apps Script และส่งข้อมูลชื่อนักเรียนไปด้วย
+                const gasResult = await apiCall('checkIn', { 
+                    studentId: currentUser.data.id, 
+                    studentName: currentUser.data.name,
+                    photoData: photoDataUrl 
+                });
                 if(gasResult && gasResult.imageUrl) {
                      await db.collection(getColPath("checkinHistory")).doc(historyId).update({ photoUrl: gasResult.imageUrl });
                      await db.collection(getColPath("students")).doc(currentUser.data.id).update({ latestPhoto: gasResult.imageUrl });
@@ -1024,9 +1031,16 @@
             const historyId = "CHK-" + Date.now();
             try {
                 await db.collection(getColPath("checkinHistory")).doc(historyId).set({ id: historyId, studentId: currentUser.data.id, type: 'out', timestamp: new Date().toISOString(), photoUrl: "" });
-                await db.collection(getColPath("students")).doc(currentUser.data.id).update({ status: 'out' });
+                await db.collection(getColPath("students")).doc(currentUser.data.id).set({ status: 'out' }, { merge: true });
                 
-                await apiCall('checkOut', { studentId: currentUser.data.id });
+                // อัปเดตสถานะในตัวแปรทันที เพื่อแสดงผลใน UI ไม่ต้องรอโหลด
+                currentUser.data.status = 'out';
+
+                // ส่งข้อมูลชื่อนักเรียนไปให้ Apps script
+                await apiCall('checkOut', { 
+                    studentId: currentUser.data.id,
+                    studentName: currentUser.data.name 
+                });
                 
                 Swal.fire('สำเร็จ!', 'เช็คเอาท์เรียบร้อย', 'success').then(() => navigate('student_dash'));
             } catch (e) {
@@ -1060,11 +1074,21 @@
             Swal.fire({ title: 'กำลังดำเนินการ...', didOpen: () => Swal.showLoading() });
             try {
                 await db.collection(getColPath("leaveRequests")).doc(reqId).update({ status: action });
+                
+                // ค้นหาคำขอเพื่อดึงชื่อและรหัสนักเรียน
+                const req = appData.leaveRequests.find(r => r.id === reqId);
+                
                 if(action === 'approved') {
-                    const req = appData.leaveRequests.find(r => r.id === reqId);
-                    if(req) await db.collection(getColPath("students")).doc(req.studentId).update({ status: 'out' });
+                    if(req) await db.collection(getColPath("students")).doc(req.studentId).set({ status: 'out' }, { merge: true });
                 }
-                await apiCall('updateRequestStatus', { reqId, status: action });
+                
+                // ส่งชื่อและรหัสนักเรียนไปยัง Telegram 
+                await apiCall('updateRequestStatus', { 
+                    reqId, 
+                    status: action,
+                    studentName: req ? req.studentName : "",
+                    studentId: req ? req.studentId : ""
+                });
                 
                 Swal.fire('สำเร็จ', 'อัปเดตคำขอเรียบร้อย', 'success');
             } catch (e) {
