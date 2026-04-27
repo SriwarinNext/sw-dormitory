@@ -954,6 +954,9 @@
 
         // --- Check-in Logic ---
         async function startCamera() {
+            // ป้องกันปัญหากล้องค้าง (Zombie Stream) ด้วยการสั่งปิดกล้องเดิมก่อนเปิดใหม่เสมอ
+            stopCamera(); 
+            
             const video = document.getElementById('checkinVideo');
             const loading = document.getElementById('cameraLoading');
             const gpsStatus = document.getElementById('gpsStatus');
@@ -972,16 +975,24 @@
         }
         
         function stopCamera() { 
+            // 1. หยุดการเชื่อมต่อ Hardware สตรีมทั้งหมด
             if (cameraStream) { 
-                cameraStream.getTracks().forEach(track => track.stop()); 
+                cameraStream.getTracks().forEach(track => {
+                    track.stop(); 
+                }); 
                 cameraStream = null; 
-            } 
+            }
+            
+            // 2. ถอดสิทธิการเข้าถึงกล้องออกจากตัวเล่น Video HTML แบบสมบูรณ์
             const video = document.getElementById('checkinVideo');
             if (video) {
-                video.srcObject = null; // คืนสิทธิการใช้กล้องให้ระบบคอมพิวเตอร์แบบสมบูรณ์
+                video.pause();
+                video.srcObject = null;
+                video.removeAttribute('src'); 
+                video.load(); 
             }
         }
-        
+
         function takePhoto() {
             const video = document.getElementById('checkinVideo'); const canvas = document.getElementById('checkinCanvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
