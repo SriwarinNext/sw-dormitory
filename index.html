@@ -811,14 +811,19 @@
                         </div>
                         <div class="space-y-3">
                             ${groupsWithProgress.length === 0 ? `<p class="text-gray-400 text-sm text-center py-4">ยังไม่มีกลุ่มการอ่าน</p>` : groupsWithProgress.map(g => `
-                                <div class="border rounded-lg p-3">
-                                    <div class="flex justify-between items-center mb-1">
-                                        <div class="font-semibold text-gray-800">${g.name} <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded ml-1">${g.studentCount} คน</span></div>
-                                        <div class="text-xs text-gray-500">ครู: ${appData.guardians.find(gd=>gd.id===g.guardianId)?.name || 'ยังไม่กำหนด'}</div>
+                                <div class="border rounded-lg p-3 relative hover:border-teal-200 transition-colors">
+                                    <div class="flex justify-between items-center mb-1 pr-14">
+                                        <div class="font-semibold text-gray-800 truncate">${g.name} <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded ml-1">${g.studentCount} คน</span></div>
+                                        <div class="text-xs text-gray-500 hidden sm:block">ครู: ${appData.guardians.find(gd=>gd.id===g.guardianId)?.name || 'ยังไม่กำหนด'}</div>
                                     </div>
+                                    <div class="text-xs text-gray-500 sm:hidden mb-2">ครู: ${appData.guardians.find(gd=>gd.id===g.guardianId)?.name || 'ยังไม่กำหนด'}</div>
                                     <div class="flex items-center gap-2">
                                         <div class="w-full bg-gray-200 rounded-full h-1.5"><div class="bg-teal-500 h-1.5 rounded-full" style="width: ${g.pct}%"></div></div>
                                         <span class="text-xs font-bold text-teal-700 w-8 text-right">${g.pct}%</span>
+                                    </div>
+                                    <div class="absolute top-3 right-3 flex gap-3 text-base bg-white pl-2">
+                                        <button onclick="openEditGroup('${g.id}')" class="text-blue-400 hover:text-blue-600 transition" title="แก้ไขกลุ่ม"><i class="fa-solid fa-edit"></i></button>
+                                        <button onclick="deleteGroupAction('${g.id}')" class="text-red-400 hover:text-red-600 transition" title="ลบกลุ่ม"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </div>
                             `).join('')}
@@ -1251,9 +1256,9 @@
                 title: 'สร้างกลุ่มการอ่าน',
                 html: `
                     <div class="text-left space-y-3 mt-2">
-                        <div><label class="text-sm font-semibold">รหัสกลุ่ม <span class="text-red-500">*</span></label><input id="grp-id" class="w-full border p-2 rounded" placeholder="เช่น GRP-01"></div>
-                        <div><label class="text-sm font-semibold">ชื่อกลุ่ม <span class="text-red-500">*</span></label><input id="grp-name" class="w-full border p-2 rounded" placeholder="เช่น กลุ่มรักการอ่าน 1"></div>
-                        <div><label class="text-sm font-semibold">ครูผู้ดูแล <span class="text-red-500">*</span></label><select id="grp-guardian" class="w-full border p-2 rounded"><option value="">เลือกครูผู้ดูแล</option>${guardianOptions}</select></div>
+                        <div><label class="text-sm font-semibold">รหัสกลุ่ม <span class="text-red-500">*</span></label><input id="grp-id" class="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none" placeholder="เช่น GRP-01"></div>
+                        <div><label class="text-sm font-semibold">ชื่อกลุ่ม <span class="text-red-500">*</span></label><input id="grp-name" class="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none" placeholder="เช่น กลุ่มรักการอ่าน 1"></div>
+                        <div><label class="text-sm font-semibold">ครูผู้ดูแล <span class="text-red-500">*</span></label><select id="grp-guardian" class="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"><option value="">เลือกครูผู้ดูแล</option>${guardianOptions}</select></div>
                     </div>
                 `,
                 showCancelButton: true, confirmButtonText: 'บันทึก', confirmButtonColor: '#0d9488',
@@ -1266,11 +1271,65 @@
                 }
             }).then(async res => {
                 if(res.isConfirmed) {
-                    Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     try {
                         await db.collection(getColPath("groups")).doc(res.value.id).set(res.value);
                         Swal.fire('สำเร็จ', 'สร้างกลุ่มเรียบร้อย', 'success');
                     } catch(e) { Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error'); }
+                }
+            });
+        }
+
+        function openEditGroup(id) {
+            const g = appData.groups.find(x => String(x.id) === String(id));
+            if(!g) return;
+            
+            const guardianOptions = appData.guardians.map(gd => `<option value="${gd.id}" ${g.guardianId === gd.id ? 'selected' : ''}>${gd.name}</option>`).join('');
+            
+            Swal.fire({
+                title: 'แก้ไขกลุ่มการอ่าน',
+                html: `
+                    <div class="text-left space-y-3 mt-2">
+                        <div><label class="text-sm font-semibold text-gray-700">รหัสกลุ่ม</label><input id="grp-id" class="w-full border p-2 rounded bg-gray-100 text-gray-500" value="${g.id}" readonly></div>
+                        <div><label class="text-sm font-semibold">ชื่อกลุ่ม <span class="text-red-500">*</span></label><input id="grp-name" class="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none" value="${g.name}"></div>
+                        <div><label class="text-sm font-semibold">ครูผู้ดูแล <span class="text-red-500">*</span></label><select id="grp-guardian" class="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"><option value="">เลือกครูผู้ดูแล</option>${guardianOptions}</select></div>
+                    </div>
+                `,
+                showCancelButton: true, confirmButtonText: 'บันทึกการแก้ไข', confirmButtonColor: '#0d9488', cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    const name = document.getElementById('grp-name').value.trim();
+                    const guardianId = document.getElementById('grp-guardian').value;
+                    if(!name || !guardianId) { Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบ'); return false; }
+                    return { id: g.id, name, guardianId };
+                }
+            }).then(async res => {
+                if(res.isConfirmed) {
+                    Swal.fire({ title: 'กำลังอัปเดต...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    try {
+                        await db.collection(getColPath("groups")).doc(res.value.id).update({ name: res.value.name, guardianId: res.value.guardianId });
+                        Swal.fire('สำเร็จ', 'แก้ไขกลุ่มเรียบร้อย', 'success');
+                    } catch(e) { Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error'); }
+                }
+            });
+        }
+
+        function deleteGroupAction(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบกลุ่ม?',
+                text: "หากลบแล้ว กลุ่มนี้จะหายไป (แต่นักเรียนจะยังอยู่ในระบบ เพียงแต่ไม่มีกลุ่ม)",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'ใช่, ลบเลย',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    try {
+                        await db.collection(getColPath("groups")).doc(id).delete();
+                        Swal.fire('ลบสำเร็จ!', 'นำกลุ่มออกจากระบบแล้ว', 'success');
+                    } catch(e) { Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error'); }
                 }
             });
         }
