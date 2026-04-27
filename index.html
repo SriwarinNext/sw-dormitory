@@ -68,7 +68,7 @@
         // ==========================================
         
         // URL ของ Google Apps Script สำหรับแจ้งเตือน Telegram และอัปโหลดรูปลง Google Drive
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqh0PMICSq4vBxlCKYuBe6ihqsnh3r_uot6zluqRLX3mhqAGCla7CNDNKkinZgrUTc/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrta7ZfPnnYPtL9305Xk3aK_QKtTsU4EznKiSFcvTvHkFdcvobMsOmHgnib1toFADH/exec";
         const LOGO_URL = "https://img2.pic.in.th/logo-SW.png";
         
         let firebaseConfig;
@@ -970,7 +970,18 @@
                 if(loading) loading.innerHTML = `<i class="fa-solid fa-video-slash text-red-500 text-3xl mb-2"></i><br>กล้องไม่พร้อมใช้งาน`;
             }
         }
-        function stopCamera() { if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); cameraStream = null; } }
+        
+        function stopCamera() { 
+            if (cameraStream) { 
+                cameraStream.getTracks().forEach(track => track.stop()); 
+                cameraStream = null; 
+            } 
+            const video = document.getElementById('checkinVideo');
+            if (video) {
+                video.srcObject = null; // คืนสิทธิการใช้กล้องให้ระบบคอมพิวเตอร์แบบสมบูรณ์
+            }
+        }
+        
         function takePhoto() {
             const video = document.getElementById('checkinVideo'); const canvas = document.getElementById('checkinCanvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
