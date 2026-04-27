@@ -68,7 +68,7 @@
         // ==========================================
         
         // URL ของ Google Apps Script สำหรับแจ้งเตือน Telegram และอัปโหลดรูปลง Google Drive
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwgRx4hhbidQ5sKodLJjQAtCLTCM_Tlm_TfqjEWikYa-6j35z8IQUsnn9d1q1aNPdA/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrta7ZfPnnYPtL9305Xk3aK_QKtTsU4EznKiSFcvTvHkFdcvobMsOmHgnib1toFADH/exec";
         const LOGO_URL = "https://img2.pic.in.th/logo-SW.png";
         
         let firebaseConfig;
@@ -1210,7 +1210,8 @@
                         await db.collection(getColPath("scoreHistory")).doc(histId).set(newHist);
                         await db.collection(getColPath("students")).doc(studentId).update({ score: res.value.newScore });
                         
-                        await apiCall('updateScore', { studentId: studentId, oldScore: student.score, newScore: res.value.newScore, reason: finalReason });
+                        // แก้ไข: เพิ่มการส่ง studentName ไปให้ backend.gs ด้วย
+                        await apiCall('updateScore', { studentId: studentId, studentName: student.name, oldScore: student.score, newScore: res.value.newScore, reason: finalReason });
                         
                         Swal.fire('สำเร็จ', 'อัปเดตคะแนนแล้ว', 'success');
                     } catch(e) {
