@@ -57,8 +57,8 @@
                 <img src="https://img2.pic.in.th/logo-SW.png" alt="Logo" class="w-5 h-5 grayscale opacity-70">
                 <span>โรงเรียนศรีวารินทร์</span>
             </div>
-            <p>ระบบหอพักนักเรียน - สพม. นราธิวาส (Powered by Firebase)</p>
-            <p class="text-xs mt-1">&lt;\dev&gt; อับดุลฮากิม อ๊ะหมะ</p>
+            <p>ระบบหอพักนักเรียน - สพม. นราธิวาส </p>
+            <p class="text-xs mt-1">&lt;\dev\&gt; อับดุลฮากิม อ๊ะหมะ</p>
         </div>
     </footer>
 
@@ -264,7 +264,7 @@
                     <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('${role}_dash')">
                             <img src="${LOGO_URL}" alt="Logo" class="h-10 w-10 bg-white rounded-full p-1 shadow">
-                            <span class="font-bold text-xl hidden sm:block">SW-Dorm</span>
+                            <span class="font-bold text-xl hidden sm:block">SW-Dormitory</span>
                         </div>
                         <div class="flex items-center gap-2 md:gap-4 overflow-x-auto text-sm md:text-base">
                             ${menuItems}
@@ -287,7 +287,7 @@
                     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
                         <div class="bg-gradient-theme p-6 text-center text-white">
                             <img src="${LOGO_URL}" alt="Logo" class="h-20 w-20 mx-auto bg-white rounded-full p-2 shadow-md mb-3 border-2 border-pink-200">
-                            <h1 class="text-2xl font-bold">SW-Dormitory V2</h1>
+                            <h1 class="text-2xl font-bold">SW-Dormitory</h1>
                             <p class="text-sm opacity-90 mt-1">ระบบจัดการหอพักนักเรียน</p>
                         </div>
                         <div class="flex border-b">
@@ -326,7 +326,7 @@
             const myRequests = appData.leaveRequests.filter(r => r.studentId === s.id).sort((a,b) => new Date(b.outDate) - new Date(a.outDate)).slice(0, 7);
 
             return `
-                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">แผงควบคุมนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
+                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">ระบบหอพักนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow p-6 border-t-4 border-pink-500 flex flex-col md:flex-row items-center gap-6 lg:col-span-1">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=ec4899&color=fff&size=100" class="rounded-full shadow-lg border-2 border-white">
@@ -539,7 +539,7 @@
 
             return `
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">แผงควบคุมครูผู้ดูแล</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">ระบบหอพักนักเรียน (สำหรับครูผู้ดูแล)</h2>
                     <p class="text-gray-500">ข้อมูลนักเรียนในกำกับดูแลของคุณ</p>
                 </div>
 
