@@ -1107,7 +1107,12 @@
 
         function viewScoreHistory(studentId) {
             const student = appData.students.find(s => String(s.id) === String(studentId));
-            let historyHtml = (!student.scoreHistory || student.scoreHistory.length===0) ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : student.scoreHistory.slice(0,7).map(h => `<div class="mb-3 p-3 border rounded text-left"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${formatDate(h.date)}</span><span class="font-bold ${h.newScore>h.oldScore?'text-green-600':'text-red-600'}">${h.newScore>h.oldScore?'+':''}${h.newScore-h.oldScore}</span></div><p class="text-sm text-gray-600">${h.reason}</p></div>`).join('');
+            if (!student) return;
+            
+            // ดึงประวัติคะแนนของนักเรียนจากฐานข้อมูลกลางมาแสดง
+            const sh = appData.scoreHistory.filter(h => String(h.studentId) === String(studentId)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            let historyHtml = sh.length === 0 ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : sh.slice(0,7).map(h => `<div class="mb-3 p-3 border rounded text-left"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${formatDate(h.date)}</span><span class="font-bold ${h.newScore>h.oldScore?'text-green-600':'text-red-600'}">${h.newScore>h.oldScore?'+':''}${h.newScore-h.oldScore}</span></div><p class="text-sm text-gray-600">${h.reason}</p></div>`).join('');
             Swal.fire({ title: 'ประวัติคะแนน', html: `<p class="font-bold text-pink-600 mb-4">${student.name}</p>` + historyHtml, confirmButtonColor: '#ec4899' });
         }
 
