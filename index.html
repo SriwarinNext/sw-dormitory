@@ -24,7 +24,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
-    <!-- SheetJS for Excel (เพิ่มไลบรารีสำหรับอ่าน/เขียน Excel) -->
+    <!-- SheetJS for Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
@@ -57,8 +57,8 @@
                 <img src="https://img2.pic.in.th/logo-SW.png" alt="Logo" class="w-5 h-5 grayscale opacity-70">
                 <span>โรงเรียนศรีวารินทร์</span>
             </div>
-            <p>ระบบหอพักนักเรียน - สพม. นราธิวาส </p>
-            <p class="text-xs mt-1">&lt;\dev\&gt; อับดุลฮากิม อ๊ะหมะ</p>
+            <p>ระบบหอพักนักเรียน - สพม. นราธิวาส (Powered by Firebase)</p>
+            <p class="text-xs mt-1">&lt;\dev&gt; อับดุลฮากิม อ๊ะหมะ</p>
         </div>
     </footer>
 
@@ -67,17 +67,14 @@
         // ⚡️ 1. ตั้งค่าการเชื่อมต่อฐานข้อมูล
         // ==========================================
         
-        // URL ของ Google Apps Script สำหรับแจ้งเตือน Telegram และอัปโหลดรูปลง Google Drive
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxv4R7lZ3N_Q073-dMhbQES23BtRibJfF-TMe6o2IkmzvvJWdJB9V-01Etval4UsWc1/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrta7ZfPnnYPtL9305Xk3aK_QKtTsU4EznKiSFcvTvHkFdcvobMsOmHgnib1toFADH/exec";
         const LOGO_URL = "https://img2.pic.in.th/logo-SW.png";
         
         let firebaseConfig;
         
-        // ระบบจะเช็คอัตโนมัติ: ถ้ารันบน github.io จะใช้ฐานข้อมูลจริงของคุณ
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // Firebase Config ของคุณ
             firebaseConfig = {
                 apiKey: "AIzaSyB8TyuzvyJ41hfxJHjT8ufSB62GDB4Kk6o",
                 authDomain: "sw-dormitory.firebaseapp.com",
@@ -89,17 +86,14 @@
             };
         }
 
-        // เริ่มต้นการเชื่อมต่อ Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // ฟังก์ชันช่วยจัดการ Path ฐานข้อมูล
         const getColPath = (colName) => {
             if (typeof __firebase_config !== 'undefined' && typeof __app_id !== 'undefined') {
                 return `artifacts/${__app_id}/public/data/${colName}`;
             }
-            // เมื่อรันบน github.io จะใช้ชื่อ Collection ปกติ
             return colName;
         };
 
@@ -126,7 +120,6 @@
             appDiv.innerHTML = `<div class="flex-grow flex items-center justify-center flex-col"><i class="fa-solid fa-circle-notch fa-spin text-5xl text-pink-500 mb-4"></i><p class="text-gray-500 font-semibold animate-pulse">กำลังเชื่อมต่อฐานข้อมูล...</p></div>`;
 
             try {
-                // ขออนุญาตการเข้าถึงฐานข้อมูล Firebase
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await auth.signInWithCustomToken(__initial_auth_token);
                 } else {
@@ -136,10 +129,9 @@
                 console.warn("Auth initialization notice:", error);
             }
 
-            // ฟังการเปลี่ยนแปลงการตั้งค่า (พิกัดหอพัก)
             db.collection(getColPath('settings')).doc('main').onSnapshot(doc => {
                 if(doc.exists) appData.settings = doc.data();
-                else db.collection(getColPath('settings')).doc('main').set(appData.settings); // ตั้งค่าเริ่มต้น
+                else db.collection(getColPath('settings')).doc('main').set(appData.settings);
                 if(isDbInitialized) render();
             }, err => console.error(err));
 
@@ -150,7 +142,6 @@
                     db.collection(getColPath(col)).onSnapshot(snapshot => {
                         appData[col] = snapshot.docs.map(d => d.data());
                         
-                        // อัปเดตข้อมูลของผู้ใช้ปัจจุบันแบบเรียลไทม์
                         if (currentUser) {
                             if (currentUser.role === 'student' && col === 'students') {
                                 currentUser.data = appData.students.find(s => String(s.id) === String(currentUser.data.id)) || currentUser.data;
@@ -170,15 +161,11 @@
 
             await Promise.all(promises);
             isDbInitialized = true;
-            render(); // โหลดเข้าสู่หน้า Login
+            render(); 
         }
 
-        // นามแฝงป้องกัน Error กรณีปุ่มเก่าถูกกด
         window.initApp = initFirebase;
 
-        // ==========================================
-        // API สำหรับส่งแจ้งเตือน Telegram / รูปภาพ (ผ่าน Apps Script)
-        // ==========================================
         async function apiCall(action, payload = {}) {
             try {
                 const response = await fetch(WEB_APP_URL, {
@@ -264,7 +251,7 @@
                     <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('${role}_dash')">
                             <img src="${LOGO_URL}" alt="Logo" class="h-10 w-10 bg-white rounded-full p-1 shadow">
-                            <span class="font-bold text-xl hidden sm:block">SW-Dormitory</span>
+                            <span class="font-bold text-xl hidden sm:block">SW-Dorm</span>
                         </div>
                         <div class="flex items-center gap-2 md:gap-4 overflow-x-auto text-sm md:text-base">
                             ${menuItems}
@@ -287,7 +274,7 @@
                     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
                         <div class="bg-gradient-theme p-6 text-center text-white">
                             <img src="${LOGO_URL}" alt="Logo" class="h-20 w-20 mx-auto bg-white rounded-full p-2 shadow-md mb-3 border-2 border-pink-200">
-                            <h1 class="text-2xl font-bold">SW-Dormitory</h1>
+                            <h1 class="text-2xl font-bold">SW-Dormitory V2</h1>
                             <p class="text-sm opacity-90 mt-1">ระบบจัดการหอพักนักเรียน</p>
                         </div>
                         <div class="flex border-b">
@@ -320,13 +307,13 @@
         // --- Student ---
         function getStudentDashboard() {
             const s = currentUser.data;
-            const readPct = s.readTarget > 0 ? Math.min(100, Math.round((s.pagesRead / s.readTarget) * 100)) : 0;
+            const readPct = s.readTarget === 0 ? 100 : (s.readTarget > 0 ? Math.min(100, Math.round(((s.pagesRead || 0) / s.readTarget) * 100)) : 0);
             const myReadHistory = appData.readingHistory.filter(h => h.studentId === s.id).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 7);
             const myHistory = appData.checkinHistory.filter(h => h.studentId === s.id).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 7);
             const myRequests = appData.leaveRequests.filter(r => r.studentId === s.id).sort((a,b) => new Date(b.outDate) - new Date(a.outDate)).slice(0, 7);
 
             return `
-                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">ระบบหอพักนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
+                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">แผงควบคุมนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow p-6 border-t-4 border-pink-500 flex flex-col md:flex-row items-center gap-6 lg:col-span-1">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=ec4899&color=fff&size=100" class="rounded-full shadow-lg border-2 border-white">
@@ -338,14 +325,15 @@
                             </p>
                         </div>
                     </div>
-                    <div class="bg-gradient-theme rounded-xl shadow p-6 text-white text-center flex flex-col justify-center">
+                    <div class="bg-gradient-theme rounded-xl shadow p-6 text-white text-center flex flex-col justify-center cursor-pointer hover:shadow-lg transition transform hover:-translate-y-1" onclick="viewScoreHistory('${s.id}')" title="คลิกเพื่อดูประวัติคะแนน">
                         <p class="text-sm opacity-90 mb-1">คะแนนพฤติกรรม</p>
                         <div class="text-5xl font-bold">${s.score}<span class="text-xl font-normal">/100</span></div>
+                        <p class="text-xs mt-2 opacity-80"><i class="fa-solid fa-hand-pointer mr-1"></i>คลิกเพื่อดูประวัติ</p>
                     </div>
                     <div class="bg-gradient-to-br from-teal-400 to-emerald-600 rounded-xl shadow p-6 text-white flex flex-col justify-center">
                         <div class="flex justify-between items-end mb-2">
                             <p class="text-sm opacity-90"><i class="fa-solid fa-book-open mr-1"></i>ความก้าวหน้าการอ่าน</p>
-                            <p class="text-2xl font-bold">${s.pagesRead}<span class="text-sm font-normal">/${s.readTarget} หน้า</span></p>
+                            <p class="text-2xl font-bold">${s.pagesRead || 0}<span class="text-sm font-normal">/${s.readTarget} หน้า</span></p>
                         </div>
                         <div class="w-full bg-white/30 rounded-full h-3 mt-2 overflow-hidden"><div class="bg-white h-3 rounded-full" style="width: ${readPct}%"></div></div>
                         <p class="text-right text-xs mt-1">${readPct}% สำเร็จ</p>
@@ -539,7 +527,7 @@
 
             return `
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">ระบบหอพักนักเรียน (สำหรับครูผู้ดูแล)</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">แผงควบคุมครูผู้ดูแล</h2>
                     <p class="text-gray-500">ข้อมูลนักเรียนในกำกับดูแลของคุณ</p>
                 </div>
 
@@ -582,7 +570,7 @@
                                         <td class="p-4 text-gray-600">${s.room || '-'} <span class="text-gray-400">/</span> ${s.bed || '-'}</td>
                                         <td class="p-4">${appData.groups.find(g=>g.id===s.groupId)?.name || '-'}</td>
                                         <td class="p-4 text-center"><span class="${s.status==='in'?'text-green-600':'text-orange-500'} font-bold"><i class="fa-solid ${s.status==='in'?'fa-house-circle-check':'fa-person-walking-arrow-right'} mr-1"></i>${s.status==='in'?'เช็คอิน':'เช็คเอาท์'}</span></td>
-                                        <td class="p-4 text-center"><span class="font-bold text-pink-600 cursor-pointer hover:underline" onclick="viewScoreHistory('${s.id}')">${s.score}</span></td>
+                                        <td class="p-4 text-center"><span class="font-bold text-pink-600 cursor-pointer hover:underline" onclick="viewScoreHistory('${s.id}')" title="ดูประวัติคะแนน">${s.score}</span></td>
                                         <td class="p-4 text-center">
                                             <div class="flex items-center justify-center gap-3 text-lg">
                                                 <button onclick="editScore('${s.id}')" class="text-yellow-500 hover:text-yellow-600 transition-colors" title="ปรับคะแนนพฤติกรรม"><i class="fa-solid fa-star"></i></button>
@@ -617,7 +605,8 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="readingCardsContainer">
                     ${myStudents.map(s => {
-                        const pct = s.readTarget > 0 ? Math.min(100, Math.round((s.pagesRead / s.readTarget) * 100)) : 0;
+                        const currentPages = s.pagesRead || 0;
+                        const pct = s.readTarget === 0 ? 100 : (s.readTarget > 0 ? Math.min(100, Math.round((currentPages / s.readTarget) * 100)) : 0);
                         return `
                         <div class="bg-white rounded-xl shadow p-4 border border-gray-100 hover:shadow-md transition relative reading-card" data-search="${s.id} ${s.name}">
                             <div class="flex justify-between items-start mb-2">
@@ -628,7 +617,7 @@
                                 <button onclick="setTarget('${s.id}')" class="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-2 py-1 rounded"><i class="fa-solid fa-bullseye text-red-500 mr-1"></i>ตั้งเป้า</button>
                             </div>
                             <div class="mb-3">
-                                <div class="flex justify-between text-xs mb-1 text-gray-600"><span>ก้าวหน้า: ${s.pagesRead}/${s.readTarget} หน้า</span><span class="font-bold text-teal-600">${pct}%</span></div>
+                                <div class="flex justify-between text-xs mb-1 text-gray-600"><span>ก้าวหน้า: ${currentPages}/${s.readTarget} หน้า</span><span class="font-bold text-teal-600">${pct}%</span></div>
                                 <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-teal-500 h-2 rounded-full" style="width: ${pct}%"></div></div>
                             </div>
                             <button onclick="openLogReading('${s.id}')" class="w-full bg-teal-50 text-teal-700 hover:bg-teal-100 py-2 rounded text-sm font-semibold transition border border-teal-200"><i class="fa-solid fa-pen-to-square mr-1"></i> บันทึกการอ่าน</button>
@@ -742,7 +731,7 @@
                                         <td class="p-4 text-gray-600">${s.room || '-'} <span class="text-gray-400">/</span> ${s.bed || '-'}</td>
                                         <td class="p-4">${appData.groups.find(g=>g.id===s.groupId)?.name || '-'}</td>
                                         <td class="p-4 text-center"><span class="${s.status==='in'?'text-green-600':'text-orange-500'} font-bold"><i class="fa-solid ${s.status==='in'?'fa-house-circle-check':'fa-person-walking-arrow-right'} mr-1"></i>${s.status==='in'?'เช็คอิน':'เช็คเอาท์'}</span></td>
-                                        <td class="p-4 text-center"><span class="font-bold text-pink-600 cursor-pointer hover:underline" onclick="viewScoreHistory('${s.id}')">${s.score}</span></td>
+                                        <td class="p-4 text-center"><span class="font-bold text-pink-600 cursor-pointer hover:underline" onclick="viewScoreHistory('${s.id}')" title="ดูประวัติคะแนน">${s.score}</span></td>
                                         <td class="p-4 text-center">
                                             <div class="flex items-center justify-center gap-3 text-lg">
                                                 <button onclick="editScore('${s.id}')" class="text-yellow-500 hover:text-yellow-600 transition-colors" title="ปรับคะแนนพฤติกรรม"><i class="fa-solid fa-star"></i></button>
@@ -796,7 +785,11 @@
                 const studs = appData.students.filter(s => s.groupId === g.id);
                 let totalTarget = 0, totalRead = 0;
                 studs.forEach(s => { totalTarget += (s.readTarget||0); totalRead += (s.pagesRead||0); });
-                const pct = totalTarget > 0 ? Math.round((totalRead / totalTarget) * 100) : 0;
+                
+                let pct = 0;
+                if (studs.length > 0 && totalTarget === 0) pct = 100;
+                else if (totalTarget > 0) pct = Math.min(100, Math.round((totalRead / totalTarget) * 100));
+
                 return { ...g, studentCount: studs.length, pct };
             });
 
@@ -907,8 +900,6 @@
                 showLoaderOnConfirm: true,
                 preConfirm: async (pin) => {
                     try {
-                        // การตรวจสอบรหัสผ่าน Admin นี้ เมื่อนำไปใช้งานจริงจะทำผ่าน Server (Firebase Cloud Functions / GAS)
-                        // เพื่อให้ทำงานใน Canvas และ github.io ได้อย่างราบรื่น จะจำลองการเรียก Server ด้วย Promise
                         return new Promise((resolve) => setTimeout(() => {
                             if (pin === '999999') resolve(true);
                             else {
@@ -954,9 +945,7 @@
 
         // --- Check-in Logic ---
         async function startCamera() {
-            // ป้องกันปัญหากล้องค้าง (Zombie Stream) ด้วยการสั่งปิดกล้องเดิมก่อนเปิดใหม่เสมอ
             stopCamera(); 
-            
             const video = document.getElementById('checkinVideo');
             const loading = document.getElementById('cameraLoading');
             const gpsStatus = document.getElementById('gpsStatus');
@@ -973,17 +962,11 @@
                 if(loading) loading.innerHTML = `<i class="fa-solid fa-video-slash text-red-500 text-3xl mb-2"></i><br>กล้องไม่พร้อมใช้งาน`;
             }
         }
-        
         function stopCamera() { 
-            // 1. หยุดการเชื่อมต่อ Hardware สตรีมทั้งหมด
             if (cameraStream) { 
-                cameraStream.getTracks().forEach(track => {
-                    track.stop(); 
-                }); 
+                cameraStream.getTracks().forEach(track => { track.stop(); }); 
                 cameraStream = null; 
             }
-            
-            // 2. ถอดสิทธิการเข้าถึงกล้องออกจากตัวเล่น Video HTML แบบสมบูรณ์
             const video = document.getElementById('checkinVideo');
             if (video) {
                 video.pause();
@@ -992,7 +975,6 @@
                 video.load(); 
             }
         }
-
         function takePhoto() {
             const video = document.getElementById('checkinVideo'); const canvas = document.getElementById('checkinCanvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
@@ -1023,17 +1005,11 @@
             
             try {
                 await db.collection(getColPath("checkinHistory")).doc(historyId).set({ id: historyId, studentId: currentUser.data.id, type: 'in', timestamp: new Date().toISOString(), photoUrl: "" });
-                await db.collection(getColPath("students")).doc(currentUser.data.id).set({ status: 'in' }, { merge: true });
+                await db.collection(getColPath("students")).doc(currentUser.data.id).update({ status: 'in' });
                 
-                // อัปเดตสถานะในตัวแปรทันที เพื่อแสดงผลใน UI ไม่ต้องรอโหลด
                 currentUser.data.status = 'in';
 
-                // ส่งรูปไปเก็บใน Drive ผ่าน Apps Script และส่งข้อมูลชื่อนักเรียนไปด้วย
-                const gasResult = await apiCall('checkIn', { 
-                    studentId: currentUser.data.id, 
-                    studentName: currentUser.data.name,
-                    photoData: photoDataUrl 
-                });
+                const gasResult = await apiCall('checkIn', { studentId: currentUser.data.id, studentName: currentUser.data.name, photoData: photoDataUrl });
                 if(gasResult && gasResult.imageUrl) {
                      await db.collection(getColPath("checkinHistory")).doc(historyId).update({ photoUrl: gasResult.imageUrl });
                      await db.collection(getColPath("students")).doc(currentUser.data.id).update({ latestPhoto: gasResult.imageUrl });
@@ -1053,16 +1029,11 @@
             const historyId = "CHK-" + Date.now();
             try {
                 await db.collection(getColPath("checkinHistory")).doc(historyId).set({ id: historyId, studentId: currentUser.data.id, type: 'out', timestamp: new Date().toISOString(), photoUrl: "" });
-                await db.collection(getColPath("students")).doc(currentUser.data.id).set({ status: 'out' }, { merge: true });
+                await db.collection(getColPath("students")).doc(currentUser.data.id).update({ status: 'out' });
                 
-                // อัปเดตสถานะในตัวแปรทันที เพื่อแสดงผลใน UI ไม่ต้องรอโหลด
                 currentUser.data.status = 'out';
 
-                // ส่งข้อมูลชื่อนักเรียนไปให้ Apps script
-                await apiCall('checkOut', { 
-                    studentId: currentUser.data.id,
-                    studentName: currentUser.data.name 
-                });
+                await apiCall('checkOut', { studentId: currentUser.data.id, studentName: currentUser.data.name });
                 
                 Swal.fire('สำเร็จ!', 'เช็คเอาท์เรียบร้อย', 'success').then(() => navigate('student_dash'));
             } catch (e) {
@@ -1097,14 +1068,12 @@
             try {
                 await db.collection(getColPath("leaveRequests")).doc(reqId).update({ status: action });
                 
-                // ค้นหาคำขอเพื่อดึงชื่อและรหัสนักเรียน
                 const req = appData.leaveRequests.find(r => r.id === reqId);
                 
                 if(action === 'approved') {
-                    if(req) await db.collection(getColPath("students")).doc(req.studentId).set({ status: 'out' }, { merge: true });
+                    if(req) await db.collection(getColPath("students")).doc(req.studentId).update({ status: 'out' });
                 }
                 
-                // ส่งชื่อและรหัสนักเรียนไปยัง Telegram 
                 await apiCall('updateRequestStatus', { 
                     reqId, 
                     status: action,
@@ -1210,7 +1179,6 @@
                         await db.collection(getColPath("scoreHistory")).doc(histId).set(newHist);
                         await db.collection(getColPath("students")).doc(studentId).update({ score: res.value.newScore });
                         
-                        // แก้ไข: เพิ่มการส่ง studentName ไปให้ backend.gs ด้วย
                         await apiCall('updateScore', { studentId: studentId, studentName: student.name, oldScore: student.score, newScore: res.value.newScore, reason: finalReason });
                         
                         Swal.fire('สำเร็จ', 'อัปเดตคะแนนแล้ว', 'success');
@@ -1226,7 +1194,7 @@
             const s = appData.students.find(x => x.id === studentId);
             Swal.fire({
                 title: 'กำหนดเป้าหมายการอ่าน',
-                html: `กำหนดจำนวนหน้าเป้าหมายให้ <b>${s.name}</b><br><input type="number" id="targetPages" class="swal2-input" value="${s.readTarget}" placeholder="จำนวนหน้า">`,
+                html: `กำหนดจำนวนหน้าเป้าหมายให้ <b>${s.name}</b><br><input type="number" id="targetPages" class="swal2-input" value="${s.readTarget}" placeholder="จำนวนหน้า (ใส่ 0 หากไม่มีเป้าหมาย)">`,
                 preConfirm: () => document.getElementById('targetPages').value
             }).then(async res => {
                 if(res.isConfirmed) {
@@ -1246,7 +1214,7 @@
                 html: `
                     <div class="text-left text-sm space-y-3 mt-2">
                         <p class="font-bold text-blue-700 mb-2">นักเรียน: ${s.name}</p>
-                        <div><label class="block font-semibold mb-1">ประเภท</label><select id="rType" class="w-full border p-2 rounded"><option>ท่องจำ</option><option>ทบทวนใหม่</option><option>อ่าน</option><option>ขาดเรียน</option></select></div>
+                        <div><label class="block font-semibold mb-1">ประเภท</label><select id="rType" class="w-full border p-2 rounded"><option>อ่าน</option><option>ทบทวนใหม่</option><option>ท่องจำ</option><option>ขาดเรียน</option></select></div>
                         <div class="grid grid-cols-2 gap-2"><div><label class="block font-semibold mb-1">เริ่มหน้า</label><input type="number" id="rStart" class="w-full border p-2 rounded"></div><div><label class="block font-semibold mb-1">ถึงหน้า</label><input type="number" id="rEnd" class="w-full border p-2 rounded"></div></div>
                         <div class="grid grid-cols-2 gap-2"><div><label class="block font-semibold mb-1">คะแนน (1-5)</label><select id="rScore" class="w-full border p-2 rounded"><option value="">ไม่ระบุ</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div><div><label class="block font-semibold mb-1">สถานะ</label><select id="rStatus" class="w-full border p-2 rounded"><option>ผ่าน</option><option>ทบทวน</option></select></div></div>
                         <div><label class="block font-semibold mb-1">หมายเหตุ</label><input type="text" id="rNote" class="w-full border p-2 rounded" placeholder="กรอกหมายเหตุ (ถ้ามี)"></div>
@@ -1254,23 +1222,61 @@
                 `,
                 confirmButtonText: 'บันทึก', showCancelButton: true,
                 preConfirm: () => {
-                    return { studentId: s.id, type: document.getElementById('rType').value, startPage: parseInt(document.getElementById('rStart').value) || 0, endPage: parseInt(document.getElementById('rEnd').value) || 0, score: document.getElementById('rScore').value, status: document.getElementById('rStatus').value, note: document.getElementById('rNote').value }
+                    const type = document.getElementById('rType').value;
+                    const startPage = parseInt(document.getElementById('rStart').value) || 0;
+                    const endPage = parseInt(document.getElementById('rEnd').value) || 0;
+                    const score = document.getElementById('rScore').value;
+                    const status = document.getElementById('rStatus').value;
+                    const note = document.getElementById('rNote').value;
+
+                    // ตรวจสอบความถูกต้องของการกรอกหน้า หากไม่ใช่การขาดเรียน
+                    if (type !== 'ขาดเรียน') {
+                        if (startPage <= 0 || endPage <= 0 || endPage < startPage) {
+                            Swal.showValidationMessage('กรุณาระบุหน้าที่อ่านให้ถูกต้อง (หน้าเริ่มต้นต้องไม่มากกว่าหน้าสิ้นสุด)');
+                            return false;
+                        }
+                        
+                        // ระบบป้องกันเฉพาะกรณีครูให้สถานะ "ผ่าน"
+                        if (status === 'ผ่าน') {
+                            const currentPagesRead = s.pagesRead || 0;
+                            const expectedStart = currentPagesRead + 1; // หน้าต่อไปที่ควรจะอ่าน
+                            
+                            if (startPage < expectedStart) {
+                                Swal.showValidationMessage(`มีการอ่านหน้าซ้ำ! (หน้าล่าสุดที่อ่านคือ ${currentPagesRead}) หากจะให้ผ่าน ควรเริ่มอ่านที่หน้า ${expectedStart}`);
+                                return false;
+                            }
+                            if (startPage > expectedStart) {
+                                Swal.showValidationMessage(`มีการข้ามหน้า! ควรเริ่มอ่านที่หน้า ${expectedStart}`);
+                                return false;
+                            }
+                            if (s.readTarget > 0 && endPage > s.readTarget) {
+                                Swal.showValidationMessage(`หน้าที่ระบุเกินกว่าเป้าหมายที่ตั้งไว้ (${s.readTarget} หน้า)`);
+                                return false;
+                            }
+                        }
+                    }
+                    
+                    return { studentId: s.id, type, startPage, endPage, score, status, note }
                 }
             }).then(async res => {
                 if(res.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     try {
                         const rdId = "RD-" + Date.now();
-                        const data = res.value; data.id = rdId; data.date = new Date().toISOString();
+                        const data = res.value; 
+                        data.id = rdId; 
+                        data.date = new Date().toISOString();
                         
+                        // 1. บันทึกประวัติการอ่านลง History เสมอ (ไม่ว่าจะผ่านหรือทบทวน)
                         await db.collection(getColPath("readingHistory")).doc(rdId).set(data);
                         
-                        if(data.type !== 'ขาดเรียน' && data.endPage >= data.startPage) {
+                        // 2. ถ้าสถานะ "ผ่าน" และไม่ใช่ขาดเรียน ให้บวกจำนวนหน้าที่อ่านเพิ่มไปในโปรไฟล์นักเรียนด้วย
+                        if(data.type !== 'ขาดเรียน' && data.status === 'ผ่าน' && data.endPage >= data.startPage) {
                             const pagesRead = data.endPage - data.startPage + 1;
                             await db.collection(getColPath("students")).doc(data.studentId).update({ pagesRead: firebase.firestore.FieldValue.increment(pagesRead) });
                         }
                         
-                        Swal.fire('บันทึกสำเร็จ', 'อัปเดตความก้าวหน้าเรียบร้อย', 'success');
+                        Swal.fire('บันทึกสำเร็จ', 'อัปเดตความก้าวหน้าการอ่านเรียบร้อย', 'success');
                     } catch(e) { Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error'); }
                 }
             });
@@ -1572,7 +1578,7 @@
                                         const bed = String(row['เตียง'] || '-').trim();
                                         const readTarget = parseInt(row['เป้าหมายอ่าน(หน้า)']) || 100;
 
-                                        if(!id || !name) return null; // ข้ามแถวที่ไม่มีรหัสหรือชื่อ
+                                        if(!id || !name) return null;
 
                                         return { id, name, phone, room, bed, score: 100, status: 'out', latestPhoto: "", groupId: groupId, readTarget: readTarget, pagesRead: 0 };
                                     }).filter(item => item !== null);
@@ -1629,7 +1635,6 @@
             const s = appData.students.find(x => String(x.id) === String(id));
             if(!s) return;
 
-            // ตรวจสอบว่าใครกำลังใช้งานอยู่
             let groupOptions = '';
             if (currentUser.role === 'guardian') {
                 const myGroups = appData.groups.filter(g => g.guardianId === currentUser.data.id);
@@ -1710,8 +1715,8 @@
             appData.groups.forEach(g => {
                 const studs = appData.students.filter(s => s.groupId === g.id);
                 studs.forEach(s => {
-                    let pct = s.readTarget > 0 ? Math.round((s.pagesRead/s.readTarget)*100) : 0;
-                    csv += `${g.name},${s.id},${s.name},${s.readTarget},${s.pagesRead},${pct}%\n`;
+                    let pct = s.readTarget === 0 ? 100 : (s.readTarget > 0 ? Math.round(((s.pagesRead||0)/s.readTarget)*100) : 0);
+                    csv += `${g.name},${s.id},${s.name},${s.readTarget},${s.pagesRead||0},${pct}%\n`;
                 });
             });
             const blob = new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' });
@@ -1720,8 +1725,7 @@
 
         function formatDate(iso) { if(!iso) return "-"; return new Date(iso).toLocaleString('th-TH', {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})+' น.'; }
         
-        // เริ่มการทำงานและแก้ไขจุดที่เกิด Error initApp is not defined
-        window.onload = initFirebase;
+        window.onload = window.initApp;
         
     </script>
 </body>
