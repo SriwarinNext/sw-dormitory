@@ -312,6 +312,12 @@
             const myHistory = appData.checkinHistory.filter(h => h.studentId === s.id).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 7);
             const myRequests = appData.leaveRequests.filter(r => r.studentId === s.id).sort((a,b) => new Date(b.outDate) - new Date(a.outDate)).slice(0, 7);
 
+            // ค้นหากลุ่มและครูผู้ดูแลของนักเรียน
+            const myGroup = appData.groups.find(g => g.id === s.groupId);
+            const groupName = myGroup ? myGroup.name : '-';
+            const myGuardian = myGroup ? appData.guardians.find(g => g.id === myGroup.guardianId) : null;
+            const guardianName = myGuardian ? myGuardian.name : '-';
+
             return `
                 <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">แผงควบคุมนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -320,6 +326,8 @@
                         <div class="w-full text-sm">
                             <p class="text-gray-500 text-xs">รหัส: <strong class="text-gray-800 text-sm">${s.id}</strong></p>
                             <p class="text-gray-500 text-xs mt-1">ห้องพัก: <strong class="text-blue-600 text-sm">${s.room} / ${s.bed}</strong></p>
+                            <p class="text-gray-500 text-xs mt-1">กลุ่ม: <strong class="text-gray-800 text-sm">${groupName}</strong></p>
+                            <p class="text-gray-500 text-xs mt-1">ผู้ดูแล: <strong class="text-gray-800 text-sm">${guardianName}</strong></p>
                             <p class="mt-3 text-lg font-bold ${s.status === 'in' ? 'text-green-500' : 'text-orange-500'}">
                                 <i class="fa-solid ${s.status === 'in' ? 'fa-house-user' : 'fa-person-walking-arrow-right'}"></i> ${s.status === 'in' ? 'อยู่ในหอพัก' : 'อยู่นอกหอพัก'}
                             </p>
@@ -423,8 +431,8 @@
                                         <td class="p-3">${formatDate(r.inDate)}</td>
                                         <td class="p-3">
                                             ${r.status === 'pending' ? '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs"><i class="fa-solid fa-hourglass-half mr-1"></i>รออนุมัติ</span>' : ''}
-                                            ${r.status === 'approved' ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs"><i class="fa-solid fa-check mr-1"></i>อนุมัติ</span>' : ''}
-                                            ${r.status === 'rejected' ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs"><i class="fa-solid fa-xmark mr-1"></i>ไม่อนุมัติ</span>' : ''}
+                                            ${r.status === 'approved' ? `<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs"><i class="fa-solid fa-check mr-1"></i>อนุมัติ ${r.handledBy ? `(โดย: ${r.handledBy})` : ''}</span>` : ''}
+                                            ${r.status === 'rejected' ? `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs"><i class="fa-solid fa-xmark mr-1"></i>ไม่อนุมัติ ${r.handledBy ? `(โดย: ${r.handledBy})` : ''}</span>` : ''}
                                         </td>
                                     </tr>
                                   `).join('')}
@@ -644,7 +652,7 @@
                         </td>
                     ` : `
                         <td class="p-4 text-center">
-                            ${r.status === 'approved' ? '<span class="text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full text-xs">อนุญาตแล้ว</span>' : '<span class="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-full text-xs">ไม่อนุญาต</span>'}
+                            ${r.status === 'approved' ? `<span class="text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full text-xs block">อนุญาตแล้ว</span>${r.handledBy ? `<div class="text-[10px] text-gray-500 mt-1">โดย: ${r.handledBy}</div>` : ''}` : `<span class="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-full text-xs block">ไม่อนุญาต</span>${r.handledBy ? `<div class="text-[10px] text-gray-500 mt-1">โดย: ${r.handledBy}</div>` : ''}`}
                         </td>
                     `}
                 </tr>
@@ -1066,7 +1074,12 @@
         async function handleRequest(reqId, action) {
             Swal.fire({ title: 'กำลังดำเนินการ...', didOpen: () => Swal.showLoading() });
             try {
-                await db.collection(getColPath("leaveRequests")).doc(reqId).update({ status: action });
+                let handlerName = currentUser.role === 'admin' ? 'ผู้ดูแลระบบ' : currentUser.data.name;
+                
+                await db.collection(getColPath("leaveRequests")).doc(reqId).update({ 
+                    status: action,
+                    handledBy: handlerName
+                });
                 
                 const req = appData.leaveRequests.find(r => r.id === reqId);
                 
@@ -1078,7 +1091,8 @@
                     reqId, 
                     status: action,
                     studentName: req ? req.studentName : "",
-                    studentId: req ? req.studentId : ""
+                    studentId: req ? req.studentId : "",
+                    handledBy: handlerName
                 });
                 
                 Swal.fire('สำเร็จ', 'อัปเดตคำขอเรียบร้อย', 'success');
@@ -1109,7 +1123,6 @@
             const student = appData.students.find(s => String(s.id) === String(studentId));
             if (!student) return;
             
-            // ดึงประวัติคะแนนของนักเรียนจากฐานข้อมูลกลางมาแสดง
             const sh = appData.scoreHistory.filter(h => String(h.studentId) === String(studentId)).sort((a,b) => new Date(b.date) - new Date(a.date));
             
             let historyHtml = sh.length === 0 ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : sh.slice(0,7).map(h => `<div class="mb-3 p-3 border rounded text-left"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${formatDate(h.date)}</span><span class="font-bold ${h.newScore>h.oldScore?'text-green-600':'text-red-600'}">${h.newScore>h.oldScore?'+':''}${h.newScore-h.oldScore}</span></div><p class="text-sm text-gray-600">${h.reason}</p></div>`).join('');
