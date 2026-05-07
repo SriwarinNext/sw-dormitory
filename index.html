@@ -67,6 +67,7 @@
         // ⚡️ 1. ตั้งค่าการเชื่อมต่อฐานข้อมูล
         // ==========================================
         
+        // อัปเดตลิงก์ Google Apps Script ใหม่ล่าสุด
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzG0yQdJ035qEeE3bOZEB8q3W-ODvojnvFS9E9BD8kMJWSpaGQb0OzVsBPjxfRbTkiE/exec";
         const LOGO_URL = "https://img2.pic.in.th/logo-SW.png";
         
@@ -109,7 +110,11 @@
 
         let appData = {
             settings: { targetLat: 6.4255, targetLng: 101.8252, radius: 50 },
-            guardians: [], groups: [], students: [], checkinHistory: [], leaveRequests: [], scoreHistory: [], readingHistory: []
+            guardians: [], groups: [], students: [], checkinHistory: [], leaveRequests: [
+                // อัปเดต Mock Data ให้มี createdAt สำหรับการทดสอบจัดเรียง
+                { id: "REQ-1714041000000", studentId: "04002", studentName: "นางสาว สมหญิง รักเรียน", reason: "กลับบ้านช่วงเสาร์-อาทิตย์", outDate: "2026-04-25T16:00", inDate: "2026-04-27T17:00", status: "approved", handledBy: "ครูสมปอง ดูแลดี", createdAt: "2026-04-25T10:30:00.000Z" },
+                { id: "REQ-1714050000000", studentId: "04003", studentName: "นาย สมศักดิ์ เก่งกาจ", reason: "ไปซื้อของใช้ส่วนตัว", outDate: "2026-04-28T16:00", inDate: "2026-04-28T19:00", status: "pending", createdAt: "2026-04-26T08:00:00.000Z" }
+            ], scoreHistory: [], readingHistory: []
         };
 
         // ==========================================
@@ -304,13 +309,23 @@
             `;
         }
 
+        // ฟังก์ชันช่วยดึงเวลาคำขอ เพื่อใช้จัดเรียงให้ตรงกับเวลาที่เกิด Action ล่าสุด
+        const getReqDate = (r) => {
+            if (r.createdAt) return new Date(r.createdAt);
+            const parts = String(r.id).split('-');
+            if (parts.length > 1 && !isNaN(parts[1])) return new Date(parseInt(parts[1]));
+            return new Date(r.outDate || 0);
+        };
+
         // --- Student ---
         function getStudentDashboard() {
             const s = currentUser.data;
             const readPct = s.readTarget === 0 ? 100 : (s.readTarget > 0 ? Math.min(100, Math.round(((s.pagesRead || 0) / s.readTarget) * 100)) : 0);
             const myReadHistory = appData.readingHistory.filter(h => h.studentId === s.id).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 7);
             const myHistory = appData.checkinHistory.filter(h => h.studentId === s.id).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 7);
-            const myRequests = appData.leaveRequests.filter(r => r.studentId === s.id).sort((a,b) => new Date(b.outDate) - new Date(a.outDate)).slice(0, 7);
+            
+            // เรียงลำดับคำขออนุญาตตามเวลาที่กดขอ (เกิดเหตุการณ์ล่าสุด)
+            const myRequests = appData.leaveRequests.filter(r => r.studentId === s.id).sort((a,b) => getReqDate(b) - getReqDate(a)).slice(0, 7);
 
             // ค้นหากลุ่มและครูผู้ดูแลของนักเรียน
             const myGroup = appData.groups.find(g => g.id === s.groupId);
@@ -431,8 +446,8 @@
                                         <td class="p-3">${formatDate(r.inDate)}</td>
                                         <td class="p-3">
                                             ${r.status === 'pending' ? '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs"><i class="fa-solid fa-hourglass-half mr-1"></i>รออนุมัติ</span>' : ''}
-                                            ${r.status === 'approved' ? `<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs"><i class="fa-solid fa-check mr-1"></i>อนุมัติ ${r.handledBy ? `(โดย: ${r.handledBy})` : ''}</span>` : ''}
-                                            ${r.status === 'rejected' ? `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs"><i class="fa-solid fa-xmark mr-1"></i>ไม่อนุมัติ ${r.handledBy ? `(โดย: ${r.handledBy})` : ''}</span>` : ''}
+                                            ${r.status === 'approved' ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs"><i class="fa-solid fa-check mr-1"></i>อนุมัติ</span>' : ''}
+                                            ${r.status === 'rejected' ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs"><i class="fa-solid fa-xmark mr-1"></i>ไม่อนุมัติ</span>' : ''}
                                         </td>
                                     </tr>
                                   `).join('')}
@@ -637,8 +652,9 @@
         }
 
         function getGuardianRequests() {
-            const pendingReqs = appData.leaveRequests.filter(r => r.status === 'pending');
-            const historyReqs = appData.leaveRequests.filter(r => r.status !== 'pending').slice(0, 7);
+            // เรียงลำดับคำขออนุญาตตามเวลาที่กดขอใหม่อยู่บนสุดเสมอ
+            const pendingReqs = appData.leaveRequests.filter(r => r.status === 'pending').sort((a,b) => getReqDate(b) - getReqDate(a));
+            const historyReqs = appData.leaveRequests.filter(r => r.status !== 'pending').sort((a,b) => getReqDate(b) - getReqDate(a)).slice(0, 7);
 
             const renderRow = (r, isPending) => `
                 <tr class="border-b hover:bg-gray-50 req-row">
@@ -1061,7 +1077,8 @@
             try {
                 await db.collection(getColPath("leaveRequests")).doc(reqId).set({
                     id: reqId, studentId: currentUser.data.id, studentName: currentUser.data.name,
-                    reason: reason, outDate: outDate, inDate: inDate, status: 'pending'
+                    reason: reason, outDate: outDate, inDate: inDate, status: 'pending',
+                    createdAt: new Date().toISOString() // เพิ่มเวลาที่ส่งคำขอ
                 });
                 await apiCall('submitLeave', { studentId: currentUser.data.id, studentName: currentUser.data.name, reason: reason, outDate: outDate, inDate: inDate });
                 
@@ -1083,9 +1100,7 @@
                 
                 const req = appData.leaveRequests.find(r => r.id === reqId);
                 
-                if(action === 'approved') {
-                    if(req) await db.collection(getColPath("students")).doc(req.studentId).update({ status: 'out' });
-                }
+                // ถอดการเปลี่ยนสถานะนักเรียนเป็น 'out' อัตโนมัติออก นักเรียนต้องสแกนเอง
                 
                 await apiCall('updateRequestStatus', { 
                     reqId, 
@@ -1109,10 +1124,18 @@
                 date: new Date(h.timestamp), type: h.type === 'in' ? 'checkin' : 'checkout', detail: h.type === 'in' ? 'เช็คอินเข้าหอพัก' : 'เช็คเอาท์ออกหอพัก',
                 statusHtml: h.type === 'in' ? '<span class="text-green-600 bg-green-50 px-2 rounded text-xs font-bold">เข้าหอ</span>' : '<span class="text-orange-500 bg-orange-50 px-2 rounded text-xs font-bold">ออกหอ</span>'
             }));
-            const leaves = appData.leaveRequests.filter(r => String(r.studentId) === String(studentId)).map(r => ({
-                date: new Date(r.outDate), type: 'leave', detail: `ออก: ${formatDate(r.outDate)} กลับ: ${formatDate(r.inDate)}`,
-                statusHtml: r.status === 'approved' ? '<span class="text-green-600 bg-green-50 px-2 rounded text-xs font-bold">อนุมัติ</span>' : '<span class="text-yellow-600 bg-yellow-50 px-2 rounded text-xs font-bold">รออนุมัติ</span>'
-            }));
+            const leaves = appData.leaveRequests.filter(r => String(r.studentId) === String(studentId)).map(r => {
+                // อิงเวลาจากตอนที่กดส่งคำขอ แทนเวลาออก
+                let rDate = r.createdAt ? new Date(r.createdAt) : null;
+                if (!rDate) {
+                    const parts = String(r.id).split('-');
+                    rDate = (parts.length > 1 && !isNaN(parts[1])) ? new Date(parseInt(parts[1])) : new Date(r.outDate || 0);
+                }
+                return {
+                    date: rDate, type: 'leave', detail: `ออก: ${formatDate(r.outDate)} กลับ: ${formatDate(r.inDate)}`,
+                    statusHtml: r.status === 'approved' ? '<span class="text-green-600 bg-green-50 px-2 rounded text-xs font-bold">อนุมัติ</span>' : (r.status === 'rejected' ? '<span class="text-red-600 bg-red-50 px-2 rounded text-xs font-bold">ไม่อนุมัติ</span>' : '<span class="text-yellow-600 bg-yellow-50 px-2 rounded text-xs font-bold">รออนุมัติ</span>')
+                };
+            });
             const combinedHistory = [...checkins, ...leaves].sort((a, b) => b.date - a.date).slice(0, 7);
 
             let historyHtml = combinedHistory.length === 0 ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : combinedHistory.map(h => `<div class="mb-3 p-3 border rounded"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${formatDate(h.date.toISOString())}</span>${h.statusHtml}</div><p class="text-sm text-gray-600">${h.detail}</p></div>`).join('');
@@ -1247,17 +1270,15 @@
                     const status = document.getElementById('rStatus').value;
                     const note = document.getElementById('rNote').value;
 
-                    // ตรวจสอบความถูกต้องของการกรอกหน้า หากไม่ใช่การขาดเรียน
                     if (type !== 'ขาดเรียน') {
                         if (startPage <= 0 || endPage <= 0 || endPage < startPage) {
                             Swal.showValidationMessage('กรุณาระบุหน้าที่อ่านให้ถูกต้อง (หน้าเริ่มต้นต้องไม่มากกว่าหน้าสิ้นสุด)');
                             return false;
                         }
                         
-                        // ระบบป้องกันเฉพาะกรณีครูให้สถานะ "ผ่าน"
                         if (status === 'ผ่าน') {
                             const currentPagesRead = s.pagesRead || 0;
-                            const expectedStart = currentPagesRead + 1; // หน้าต่อไปที่ควรจะอ่าน
+                            const expectedStart = currentPagesRead + 1; 
                             
                             if (startPage < expectedStart) {
                                 Swal.showValidationMessage(`มีการอ่านหน้าซ้ำ! (หน้าล่าสุดที่อ่านคือ ${currentPagesRead}) หากจะให้ผ่าน ควรเริ่มอ่านที่หน้า ${expectedStart}`);
@@ -1285,10 +1306,8 @@
                         data.id = rdId; 
                         data.date = new Date().toISOString();
                         
-                        // 1. บันทึกประวัติการอ่านลง History เสมอ (ไม่ว่าจะผ่านหรือทบทวน)
                         await db.collection(getColPath("readingHistory")).doc(rdId).set(data);
                         
-                        // 2. ถ้าสถานะ "ผ่าน" และไม่ใช่ขาดเรียน ให้บวกจำนวนหน้าที่อ่านเพิ่มไปในโปรไฟล์นักเรียนด้วย
                         if(data.type !== 'ขาดเรียน' && data.status === 'ผ่าน' && data.endPage >= data.startPage) {
                             const pagesRead = data.endPage - data.startPage + 1;
                             await db.collection(getColPath("students")).doc(data.studentId).update({ pagesRead: firebase.firestore.FieldValue.increment(pagesRead) });
