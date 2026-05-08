@@ -68,7 +68,7 @@
         // ==========================================
         
         // อัปเดตลิงก์ Google Apps Script ใหม่ล่าสุด
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyIZOoafpNQ3f6NihXpP_jWa_I6tnrfAPzug5xjDQOl4HiV6E74SKTkLIB67gR7JIGd/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzG0yQdJ035qEeE3bOZEB8q3W-ODvojnvFS9E9BD8kMJWSpaGQb0OzVsBPjxfRbTkiE/exec";
         const LOGO_URL = "https://img2.pic.in.th/logo-SW.png";
         
         let firebaseConfig;
@@ -1122,6 +1122,7 @@
             if (!student) return;
             const checkins = appData.checkinHistory.filter(h => String(h.studentId) === String(studentId)).map(h => ({
                 date: new Date(h.timestamp), type: h.type === 'in' ? 'checkin' : 'checkout', detail: h.type === 'in' ? 'เช็คอินเข้าหอพัก' : 'เช็คเอาท์ออกหอพัก',
+                photoUrl: h.photoUrl, // เพิ่มการดึงข้อมูลรูปภาพ
                 statusHtml: h.type === 'in' ? '<span class="text-green-600 bg-green-50 px-2 rounded text-xs font-bold">เข้าหอ</span>' : '<span class="text-orange-500 bg-orange-50 px-2 rounded text-xs font-bold">ออกหอ</span>'
             }));
             const leaves = appData.leaveRequests.filter(r => String(r.studentId) === String(studentId)).map(r => {
@@ -1138,7 +1139,15 @@
             });
             const combinedHistory = [...checkins, ...leaves].sort((a, b) => b.date - a.date).slice(0, 7);
 
-            let historyHtml = combinedHistory.length === 0 ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : combinedHistory.map(h => `<div class="mb-3 p-3 border rounded"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${formatDate(h.date.toISOString())}</span>${h.statusHtml}</div><p class="text-sm text-gray-600">${h.detail}</p></div>`).join('');
+            let historyHtml = combinedHistory.length === 0 ? '<p class="text-center text-sm text-gray-500 py-4">ไม่มีประวัติ</p>' : combinedHistory.map(h => `
+                <div class="mb-3 p-3 border rounded text-left">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-sm">${formatDate(h.date.toISOString())}</span>${h.statusHtml}
+                    </div>
+                    <p class="text-sm text-gray-600">${h.detail}</p>
+                    ${h.photoUrl ? `<div class="mt-2"><a href="${h.photoUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-3 py-1 rounded-full text-xs font-semibold inline-block"><i class="fa-solid fa-image mr-1"></i> ดูรูปถ่ายเช็คอิน</a></div>` : ''}
+                </div>`).join('');
+                
             Swal.fire({ title: 'ไทม์ไลน์ประวัติ', html: `<p class="font-bold text-blue-600 mb-4">${student.name}</p>` + historyHtml, confirmButtonColor: '#3b82f6' });
         }
 
