@@ -57,8 +57,8 @@
                 <img src="https://img2.pic.in.th/logo-SW.png" alt="Logo" class="w-5 h-5 grayscale opacity-70">
                 <span>โรงเรียนศรีวารินทร์</span>
             </div>
-            <p>ระบบหอพักนักเรียน - สพม. นราธิวาส (Powered by Firebase)</p>
-            <p class="text-xs mt-1">&lt;\dev&gt; อับดุลฮากิม อ๊ะหมะ</p>
+            <p>ระบบหอพักนักเรียน - สพม.นราธิวาส</p>
+            <p class="text-xs mt-1">&lt;\dev\&gt; อับดุลฮากิม อ๊ะหมะ</p>
         </div>
     </footer>
 
@@ -251,7 +251,7 @@
                     <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('${role}_dash')">
                             <img src="${LOGO_URL}" alt="Logo" class="h-10 w-10 bg-white rounded-full p-1 shadow">
-                            <span class="font-bold text-xl hidden sm:block">SW-Dorm</span>
+                            <span class="font-bold text-xl hidden sm:block">SW-Dormitory</span>
                         </div>
                         <div class="flex items-center gap-2 md:gap-4 overflow-x-auto text-sm md:text-base">
                             ${menuItems}
@@ -274,7 +274,7 @@
                     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
                         <div class="bg-gradient-theme p-6 text-center text-white">
                             <img src="${LOGO_URL}" alt="Logo" class="h-20 w-20 mx-auto bg-white rounded-full p-2 shadow-md mb-3 border-2 border-pink-200">
-                            <h1 class="text-2xl font-bold">SW-Dormitory V2</h1>
+                            <h1 class="text-2xl font-bold">SW-Dormitory</h1>
                             <p class="text-sm opacity-90 mt-1">ระบบจัดการหอพักนักเรียน</p>
                         </div>
                         <div class="flex border-b">
@@ -325,7 +325,7 @@
             const guardianName = myGuardian ? myGuardian.name : '-';
 
             return `
-                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">แผงควบคุมนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
+                <div class="mb-6"><h2 class="text-2xl font-bold text-gray-800">ระบบหอพักนักเรียน</h2><p class="text-gray-500">ยินดีต้อนรับ, ${s.name}</p></div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow p-6 border-t-4 border-pink-500 flex flex-col md:flex-row items-center gap-6 lg:col-span-1">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=ec4899&color=fff&size=100" class="rounded-full shadow-lg border-2 border-white">
@@ -380,7 +380,7 @@
                 <!-- ประวัติการเข้า-ออกหอพัก -->
                 <div class="bg-white rounded-xl shadow overflow-hidden mb-6">
                     <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
-                        <h3 class="font-bold text-gray-700"><i class="fa-solid fa-clock-rotate-left mr-2"></i>ประวัติการเข้า-ออกหอพัก (7 ล่าสุด)</h3>
+                        <h3 class="font-bold text-gray-700"><i class="fa-solid fa-clock-rotate-left mr-2"></i>ประวัติการเข้า-ออกหอพัก</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm border-collapse">
@@ -416,7 +416,7 @@
                 <!-- ประวัติการขออนุญาต -->
                 <div class="bg-white rounded-xl shadow overflow-hidden">
                     <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
-                        <h3 class="font-bold text-gray-700"><i class="fa-solid fa-paper-plane mr-2"></i>ประวัติการขออนุญาต (7 ล่าสุด)</h3>
+                        <h3 class="font-bold text-gray-700"><i class="fa-solid fa-paper-plane mr-2"></i>ประวัติการขออนุญาต</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm border-collapse">
@@ -722,7 +722,7 @@
                     </div>
                 </div>
                 <div class="bg-white rounded-xl shadow-md overflow-hidden opacity-90">
-                    <div class="p-4 bg-gray-50 border-b"><h3 class="font-bold text-gray-600"><i class="fa-solid fa-history mr-2"></i>ประวัติ (7 ล่าสุด)</h3></div>
+                    <div class="p-4 bg-gray-50 border-b"><h3 class="font-bold text-gray-600"><i class="fa-solid fa-history mr-2"></i>ประวัติ</h3></div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead><tr class="bg-gray-50"><th class="p-4">นักเรียน</th><th class="p-4">เหตุผล</th><th class="p-4">กำหนดการ</th><th class="p-4 text-center">สถานะ</th></tr></thead>
@@ -872,7 +872,7 @@
 
             return `
                 <div class="mb-6 flex justify-between items-end">
-                    <div><h2 class="text-2xl font-bold text-gray-800">จัดการระบบ (Admin) V2</h2></div>
+                    <div><h2 class="text-2xl font-bold text-gray-800">จัดการระบบ (Admin)</h2></div>
                     <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
                 </div>
                 
